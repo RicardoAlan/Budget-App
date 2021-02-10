@@ -1,0 +1,120 @@
+class Category:
+
+    def __init__(self, categoria): #Inicio las instancias variables
+        self.categoria = categoria
+        self.ledger = []
+        self.balance = [] #Creo una nueva lista para almacenar los dineros que vayan entrando
+
+    def sumaList(self, lista): #Creo na función para ir haciendo las sumas y restas de los ingresos y los gastos
+        self.fin = 0
+        self.perdida = 0 
+        zum = 0
+        per = 0
+        for i in lista:
+            zum = zum + i
+            if i < 0:
+                per = per + i
+        self.fin = zum
+        self.perdida = per
+
+
+    def deposit(self, dinero, descr = ""): #Inicio el método de depósito
+        self.balance.append(dinero)  #Guardo el dinero en la lista balance
+        self.sumaList(self.balance)  #Llamo a la función sumaList con la lista balance a la cual le acabo de agregar un elemento
+        self.ledger.append({'amount':dinero, 'description':descr}) #Lleno la lista ledger con un objeto e instancias 
+        
+    
+    def withdraw(self, dinero, descr = ""): #Inicio el método de pérdidas
+        self.balance.append(dinero*-1) #Guardo el dinero en la lista balance como negativo
+        money = dinero * -1 #Para ponerlo negativo 
+        self.sumaList(self.balance)  #Llamo a la función sumaList con la lista balance a la cual le acabo de agregar un elemento
+
+        if self.fin < 0: #Si mi balance es negativo, i.e. no tengo fondos
+            self.balance.append(dinero) #Regreso el dinero perdido (pues no acepto tal)
+            return False #regreso false 
+        else:
+            self.ledger.append({'amount':money, 'description':descr}) #Lleno la lista ledger con un objeto e instancias
+            return True
+
+    def get_balance(self): #Inicio método de balance
+        return self.fin #Resultado de la suma de los números de la lista balance 
+
+    def get_withdraw(self):
+        return self.perdida #Resultado de la suma de los números negativos de la lista balance 
+
+    def transfer(self, dinero, cate): #Inicio método de transferencia
+        if self.fin < dinero: 
+            return False
+        else :
+            self.withdraw(dinero, 'Transfer to ' + cate.categoria )
+            cate.deposit(dinero, 'Transfer from ' + self.categoria)
+            return True
+    
+    def check_funds (self, dinero):
+        if dinero > self.fin:
+            return False
+        else:
+            return True
+
+    def __str__(self): #Impresión del ticket. __str__(self) es un método especial para cuando piden imprimir la clase
+        s = str(self.categoria).center(30,'*') #Declaro s como un string de 30 espacios con la categoria al centro y el resto *
+        for obj in self.ledger: #Me voy de objeto por objeto de la lista ledger
+            #Tomo los primeros 23 elementos de la instancia description (recordemos que es un objeto)
+            #los hago un string y los alineo a la izquierda con 23 espacios 
+            #despues tomo la instancia amount (es objeto) y con format {:.2f} le digo que lo que esté adentro
+            #le de un formato de 2 decimales y lo ajusto a la derecha con 7 espacios  
+            s += '\n' + str(obj['description'][:23]).ljust(23) + str("{:.2f}".format(obj['amount'])).rjust(7) 
+        s += '\n' + 'Total: ' + str("{:.2f}".format(self.fin)) #Coloco el total en formato de dos decimales
+        return s
+    
+def create_spend_chart(lista):
+    cien = 0
+    lst = []
+    prct = []
+    for i in lista:
+        cien += i.get_withdraw()
+        lst.append(i.get_withdraw())
+    for n in lst:
+        porcentaje = n/cien
+        if porcentaje < 0.1:
+          porcentaje = 0
+        else:
+          porcentaje = round(porcentaje, 1) * 100
+        prct.append(porcentaje)
+    
+    #########################################
+
+    line = 'Percentage spent by category\n'
+    m = 100
+    while m >= 0:
+        barras = ''
+        for prtj in prct:
+            if prtj >= m:
+                barras += 'o  '
+            else:
+                barras += '   '
+        line += str(m).rjust(3) + '| ' + barras + ('\n')
+        m -= 10
+    
+    espacio = '    '
+    line += espacio.ljust(5+len(barras), '-') 
+
+    nombres = []
+    eje_x = '' 
+
+    for l in lista:
+        nombres.append(l.categoria)
+    maxLargo = len(max(nombres, key = len)) #Me devuelve el valor de la string mas larga 
+
+    for x in range (maxLargo):
+        nombreX = ''
+        for nombre in nombres:
+            if x >= len(nombre):
+                nombreX += '   ' #Mismo número de espacio que en barras
+            else:
+                nombreX += nombre[x] + '  ' #MIsmo número de espaciós que en barras
+        eje_x += '\n' + '     ' + nombreX 
+    
+    line += eje_x
+
+    return line
